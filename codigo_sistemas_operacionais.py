@@ -1,6 +1,12 @@
 import datetime
 import random
 
+"""
+    Owner: Ricardo Severo
+    Version: 1.0
+    Implemented: FCFS
+"""
+
 lista_processos = []
 
 class Processo:
