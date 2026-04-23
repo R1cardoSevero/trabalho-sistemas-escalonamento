@@ -3,8 +3,8 @@ import random
 
 """
     Owner: Ricardo Severo
-    Version: 1.0
-    Implemented: FCFS
+    Version: 1.1
+    Implemented: FCFS e SJF(Preemptivo e Não Preemptivo)
 """
 
 lista_processos = []
@@ -22,8 +22,6 @@ class Processo:
         print("Tempo de chegada: {}".format(self.tempo_chegada))
         print("Prioridade: {}\n".format(self.prioridade))
 
-
-
 def menu():
     while True:
         limpar_tela()
@@ -32,6 +30,8 @@ def menu():
         print("2 - Remover um processo")
         print("3 - Listar processos")
         print("4 - Rodar FCFS")
+        print("5 - Rodar SJF (Não Preemptivo)")
+        print("6 - Rodar SJF (Preemptivo)")
         print("0 - Sair do Programa")
         resposta = input("Digite a opção: ")
         limpar_tela()
@@ -44,12 +44,15 @@ def menu():
                 listar_processos()
             case "4":
                 rodar_fcfs()
+            case "5":
+                rodar_sjf("NAO-PREEMPTIVO")
+            case "6":
+                rodar_sjf("PREEMPTIVO")
             case "0":
                 break
             case _:
                 print("Opção Inválida")
         input("Clique enter para continuar...")
-
 
 def gerar_aleatorio():
     return random.randint(1, 100)
@@ -71,7 +74,6 @@ def entrada_usuario(texto1, texto2):
                 return gerar_aleatorio()
             case _:
                 print("Opção Inválida")
-
 
 def adicionar_processo():
     print("---//--- ADICIONAR PROCESSO ---//---")
@@ -123,6 +125,70 @@ def rodar_fcfs():
         print(f'Processo[{processo.id_processo}]: tempo_espera={tempos_espera[i]}')
     print(f'Tempo médio de espera: {(sum(tempos_espera) / len(tempos_espera)):.2f}\n')
 
+def rodar_sjf(tipo):
+    if tipo == "NAO-PREEMPTIVO":
+        tempo_espera = 0
+        tempo_atual = 0
+        tempos_espera = []
+        processos_ordenados = sorted(lista_processos, key=lambda p: p.tempo_execucao)
+
+        if not lista_processos:
+            print("\nNenhum processo na lista.\n")
+            return
+
+        print("---//--- RODAR SJF (Não Preemptivo) ---//---")
+        for processo in processos_ordenados:
+            i = processo.tempo_execucao
+            while i > 0:
+                tempo_atual += 1
+
+                if processo.tempo_chegada <= tempo_atual:
+                    print(f"tempo[{tempo_atual}] processo:[{processo.id_processo}] restante: {i}")
+                    i -= 1
+                else:
+                    print(f"tempo[{tempo_atual}]: nenhum processo está pronto")
+
+            tempos_espera.append(tempo_espera)
+            tempo_espera += processo.tempo_execucao
+
+        print("\n")
+        for i, processo in enumerate(processos_ordenados):
+            print(f'Processo[{processo.id_processo}]: tempo_espera={tempos_espera[i]}')
+        print(f'Tempo médio de espera: {(sum(tempos_espera) / len(tempos_espera)):.2f}\n')
+    else:
+        if not lista_processos:
+            print("\nNenhum processo na lista.\n")
+            return
+
+        print("---//--- RODAR SJF (Preemptivo) ---//---")
+
+        tempos_restantes = {p.id_processo: p.tempo_execucao for p in lista_processos}
+        tempos_espera = []
+        tempo_atual = 0
+        tempo_total = sum(p.tempo_execucao for p in lista_processos)
+
+        while tempo_atual < tempo_total:
+            disponiveis = [p for p in lista_processos if
+                           p.tempo_chegada <= tempo_atual and tempos_restantes[p.id_processo] > 0]
+
+            if not disponiveis:
+                print(f"tempo[{tempo_atual}]: nenhum processo está pronto")
+                tempo_atual += 1
+                continue
+
+            processo = min(disponiveis, key=lambda p: tempos_restantes[p.id_processo])
+            tempos_restantes[processo.id_processo] -= 1
+            tempo_atual += 1
+            print(
+                f"tempo[{tempo_atual}] processo:[{processo.id_processo}] restante: {tempos_restantes[processo.id_processo]}")
+
+        print("\n")
+        for processo in lista_processos:
+            espera = tempo_atual - processo.tempo_chegada - processo.tempo_execucao
+            tempos_espera.append(espera)
+            print(f'Processo[{processo.id_processo}]: tempo_espera={espera}')
+        print(f'Tempo médio de espera: {(sum(tempos_espera) / len(tempos_espera)):.2f}\n')
+
 def limpar_tela():
     print("\n" * 50)
 
@@ -138,3 +204,4 @@ if __name__ == "__main__":
     lista_processos.append(Processo(5, 16, 4))
     lista_processos.append(Processo(4, 18, 2))
     menu()
+
