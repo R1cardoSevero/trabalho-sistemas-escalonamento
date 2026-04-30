@@ -55,7 +55,7 @@ def menu():
         input("Clique enter para continuar...")
 
 def gerar_aleatorio():
-    return random.randint(1, 100)
+    return random.randint(1, 10)
 
 def entrada_usuario(texto1, texto2):
     while True:
@@ -127,34 +127,41 @@ def rodar_fcfs():
 
 def rodar_sjf(tipo):
     if tipo == "NAO-PREEMPTIVO":
-        tempo_espera = 0
-        tempo_atual = 0
-        tempos_espera = []
-        processos_ordenados = sorted(lista_processos, key=lambda p: p.tempo_execucao)
-
         if not lista_processos:
             print("\nNenhum processo na lista.\n")
             return
 
         print("---//--- RODAR SJF (Não Preemptivo) ---//---")
-        for processo in processos_ordenados:
-            i = processo.tempo_execucao
-            while i > 0:
+
+        pendentes = list(lista_processos)
+        tempo_atual = 0
+        tempos_espera = []
+        ordem_execucao = []
+
+        while pendentes:
+            disponiveis = [p for p in pendentes if p.tempo_chegada <= tempo_atual]
+
+            if not disponiveis:
+                print(f"tempo[{tempo_atual}]: nenhum processo está pronto")
                 tempo_atual += 1
+                continue
 
-                if processo.tempo_chegada <= tempo_atual:
-                    print(f"tempo[{tempo_atual}] processo:[{processo.id_processo}] restante: {i}")
-                    i -= 1
-                else:
-                    print(f"tempo[{tempo_atual}]: nenhum processo está pronto")
+            processo = min(disponiveis, key=lambda p: p.tempo_execucao)
+            pendentes.remove(processo)
 
-            tempos_espera.append(tempo_espera)
-            tempo_espera += processo.tempo_execucao
+            espera = tempo_atual - processo.tempo_chegada
+            tempos_espera.append((processo, espera))
+            ordem_execucao.append(processo)
+
+            for i in range(processo.tempo_execucao, 0, -1):
+                tempo_atual += 1
+                print(f"tempo[{tempo_atual}] processo:[{processo.id_processo}] restante: {i}")
 
         print("\n")
-        for i, processo in enumerate(processos_ordenados):
-            print(f'Processo[{processo.id_processo}]: tempo_espera={tempos_espera[i]}')
-        print(f'Tempo médio de espera: {(sum(tempos_espera) / len(tempos_espera)):.2f}\n')
+        for processo, espera in tempos_espera:
+            print(f'Processo[{processo.id_processo}]: tempo_espera={espera}')
+        media = sum(e for _, e in tempos_espera) / len(tempos_espera)
+        print(f'Tempo médio de espera: {media:.2f}\n')
     else:
         if not lista_processos:
             print("\nNenhum processo na lista.\n")
@@ -163,13 +170,13 @@ def rodar_sjf(tipo):
         print("---//--- RODAR SJF (Preemptivo) ---//---")
 
         tempos_restantes = {p.id_processo: p.tempo_execucao for p in lista_processos}
-        tempos_espera = []
+        tempo_conclusao = {}
         tempo_atual = 0
-        tempo_total = sum(p.tempo_execucao for p in lista_processos)
+        concluidos = 0
+        total = len(lista_processos)
 
-        while tempo_atual < tempo_total:
-            disponiveis = [p for p in lista_processos if
-                           p.tempo_chegada <= tempo_atual and tempos_restantes[p.id_processo] > 0]
+        while concluidos < total:
+            disponiveis = [p for p in lista_processos if p.tempo_chegada <= tempo_atual and tempos_restantes[p.id_processo] > 0]
 
             if not disponiveis:
                 print(f"tempo[{tempo_atual}]: nenhum processo está pronto")
@@ -179,12 +186,16 @@ def rodar_sjf(tipo):
             processo = min(disponiveis, key=lambda p: tempos_restantes[p.id_processo])
             tempos_restantes[processo.id_processo] -= 1
             tempo_atual += 1
-            print(
-                f"tempo[{tempo_atual}] processo:[{processo.id_processo}] restante: {tempos_restantes[processo.id_processo]}")
+            print(f"tempo[{tempo_atual}] processo:[{processo.id_processo}] restante: {tempos_restantes[processo.id_processo]}")
+
+            if tempos_restantes[processo.id_processo] == 0:
+                tempo_conclusao[processo.id_processo] = tempo_atual
+                concluidos += 1
 
         print("\n")
+        tempos_espera = []
         for processo in lista_processos:
-            espera = tempo_atual - processo.tempo_chegada - processo.tempo_execucao
+            espera = tempo_conclusao[processo.id_processo] - processo.tempo_chegada - processo.tempo_execucao
             tempos_espera.append(espera)
             print(f'Processo[{processo.id_processo}]: tempo_espera={espera}')
         print(f'Tempo médio de espera: {(sum(tempos_espera) / len(tempos_espera)):.2f}\n')
@@ -193,15 +204,9 @@ def limpar_tela():
     print("\n" * 50)
 
 if __name__ == "__main__":
-    lista_processos.append(Processo(5, 0, 3))
-    lista_processos.append(Processo(3, 2, 1))
-    lista_processos.append(Processo(8, 4, 2))
-    lista_processos.append(Processo(6, 6, 4))
-    lista_processos.append(Processo(2, 8, 5))
-    lista_processos.append(Processo(4, 10, 2))
-    lista_processos.append(Processo(7, 12, 3))
-    lista_processos.append(Processo(3, 14, 1))
-    lista_processos.append(Processo(5, 16, 4))
-    lista_processos.append(Processo(4, 18, 2))
+    lista_processos.append(Processo(10, 0, 1))
+    lista_processos.append(Processo(2, 1, 2))
+    lista_processos.append(Processo(1, 2, 3))
+    lista_processos.append(Processo(4, 3, 1))
+    lista_processos.append(Processo(3, 15, 2))
     menu()
-
