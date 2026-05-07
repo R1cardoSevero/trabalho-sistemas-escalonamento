@@ -32,6 +32,8 @@ def menu():
         print("4 - Rodar FCFS")
         print("5 - Rodar SJF (Não Preemptivo)")
         print("6 - Rodar SJF (Preemptivo)")
+        print("7 - Rodar Prioridade (Não Preemptivo)")
+        print("8 - Rodar Prioridade (Preemptivo)")
         print("0 - Sair do Programa")
         resposta = input("Digite a opção: ")
         limpar_tela()
@@ -48,6 +50,10 @@ def menu():
                 rodar_sjf("NAO-PREEMPTIVO")
             case "6":
                 rodar_sjf("PREEMPTIVO")
+            case "7":
+                rodar_prioridade("NAO-PREEMPTIVO")
+            case "8":
+                rodar_prioridade("PREEMPTIVO")
             case "0":
                 break
             case _:
@@ -184,6 +190,81 @@ def rodar_sjf(tipo):
                 continue
 
             processo = min(disponiveis, key=lambda p: tempos_restantes[p.id_processo])
+            tempos_restantes[processo.id_processo] -= 1
+            tempo_atual += 1
+            print(f"tempo[{tempo_atual}] processo:[{processo.id_processo}] restante: {tempos_restantes[processo.id_processo]}")
+
+            if tempos_restantes[processo.id_processo] == 0:
+                tempo_conclusao[processo.id_processo] = tempo_atual
+                concluidos += 1
+
+        print("\n")
+        tempos_espera = []
+        for processo in lista_processos:
+            espera = tempo_conclusao[processo.id_processo] - processo.tempo_chegada - processo.tempo_execucao
+            tempos_espera.append(espera)
+            print(f'Processo[{processo.id_processo}]: tempo_espera={espera}')
+        print(f'Tempo médio de espera: {(sum(tempos_espera) / len(tempos_espera)):.2f}\n')
+
+def rodar_prioridade(tipo):
+    if tipo == "NAO-PREEMPTIVO":
+        if not lista_processos:
+            print("\nNenhum processo na lista.\n")
+            return
+
+        print("---//--- RODAR PRIORIDADE (Não Preemptivo) ---//---")
+
+        pendentes = list(lista_processos)
+        tempo_atual = 0
+        tempos_espera = []
+        ordem_execucao = []
+
+        while pendentes:
+            disponiveis = [p for p in pendentes if p.tempo_chegada <= tempo_atual]
+
+            if not disponiveis:
+                print(f"tempo[{tempo_atual}]: nenhum processo está pronto")
+                tempo_atual += 1
+                continue
+
+            processo = max(disponiveis, key=lambda p: p.prioridade)
+            pendentes.remove(processo)
+
+            espera = tempo_atual - processo.tempo_chegada
+            tempos_espera.append((processo, espera))
+            ordem_execucao.append(processo)
+
+            for i in range(processo.tempo_execucao, 0, -1):
+                tempo_atual += 1
+                print(f"tempo[{tempo_atual}] processo:[{processo.id_processo}] restante: {i}")
+
+        print("\n")
+        for processo, espera in tempos_espera:
+            print(f'Processo[{processo.id_processo}]: tempo_espera={espera}')
+        media = sum(e for _, e in tempos_espera) / len(tempos_espera)
+        print(f'Tempo médio de espera: {media:.2f}\n')
+    else:
+        if not lista_processos:
+            print("\nNenhum processo na lista.\n")
+            return
+
+        print("---//--- RODAR PRIORIDADE (Preemptivo) ---//---")
+
+        tempos_restantes = {p.id_processo: p.tempo_execucao for p in lista_processos}
+        tempo_conclusao = {}
+        tempo_atual = 0
+        concluidos = 0
+        total = len(lista_processos)
+
+        while concluidos < total:
+            disponiveis = [p for p in lista_processos if p.tempo_chegada <= tempo_atual and tempos_restantes[p.id_processo] > 0]
+
+            if not disponiveis:
+                print(f"tempo[{tempo_atual}]: nenhum processo está pronto")
+                tempo_atual += 1
+                continue
+
+            processo = max(disponiveis, key=lambda p: p.prioridade)
             tempos_restantes[processo.id_processo] -= 1
             tempo_atual += 1
             print(f"tempo[{tempo_atual}] processo:[{processo.id_processo}] restante: {tempos_restantes[processo.id_processo]}")
